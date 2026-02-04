@@ -28,7 +28,7 @@ class ParseRASPlan(object):
                     self.plan_id = value
                 else:
                     self.other_lines.append(stripped)
-                    
+
     def update_description(self, context: str):
         """
         Replace the description block between 'BEGIN DESCRIPTION:' and 'END DESCRIPTION:'.
@@ -81,6 +81,7 @@ class ParseRASPlan(object):
             else:
                 self.other_lines.append("")  # empty content -> leave a blank line
             self.other_lines.append(end_token)
+
 
     def __str__(self):
         s = f'Plan Title={self.plan_title}\n'
