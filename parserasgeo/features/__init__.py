@@ -5,3 +5,4 @@ from .bridge import Bridge
 from .lateral_weir import LateralWeir
 from .inline_weir import InlineWeir
 from .junction import Junction
+from .storage_area import StorageArea

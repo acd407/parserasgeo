@@ -12,7 +12,7 @@ import os.path
 import warnings
 
 from .features import (
-    Bridge, CrossSection, Culvert, Junction, InlineWeir, LateralWeir, RiverReach
+    Bridge, CrossSection, Culvert, Junction, InlineWeir, LateralWeir, RiverReach, StorageArea
 )
 
 
@@ -36,6 +36,7 @@ class ParseRASGeo(object):
         num_lat_weir = 0
         num_inline_weir = 0
         num_junc = 0
+        num_storage_area = 0
         num_unknown = 0
         river = None
         reach = None
@@ -88,6 +89,11 @@ class ParseRASGeo(object):
                     junc.import_geo(line, geo_file)
                     num_junc += 1
                     self.geo_list.append(junc)
+                elif StorageArea.test(line):
+                    sa = StorageArea(debug)
+                    sa.import_geo(line, geo_file)
+                    num_storage_area += 1
+                    self.geo_list.append(sa)
                 else:
                     # Unknown line encountered. Store it as text.
                     self.geo_list.append(line)
@@ -98,8 +104,9 @@ class ParseRASGeo(object):
             print(str(num_xs)+' cross sections imported')
             print(str(num_bridge)+' bridge imported')
             print(str(num_culvert)+' culverts imported')
-            print(str(num_lat_weir)+' lateral structures imported')
-            print(str(num_inline_weir)+' lateral structures imported')
+            print(str(num_lat_weir)+' lateral weirs imported')
+            print(str(num_inline_weir)+' inline weirs imported')
+            print(str(num_storage_area) + ' storage areas imported')
             print(str(num_unknown) + ' unknown lines imported')
 
     def write(self, out_geo_filename):
@@ -298,6 +305,12 @@ class ParseRASGeo(object):
             reaches = (r for r in reaches if r.header.reach_name == reach)
 
         return list(reaches)
+
+    def get_storage_areas(self):
+        """
+        Returns list of all StorageArea in geometry
+        """
+        return [item for item in self.geo_list if isinstance(item, StorageArea)]
 
     def _return_node(self, node_type, node_id, river, reach, strip=False, rnd=False, digits=0):
         """
