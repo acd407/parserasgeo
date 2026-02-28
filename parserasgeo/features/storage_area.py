@@ -153,7 +153,7 @@ class StorageArea(object):
         s = ""
         for line in self.geo_list:
             s += str(line)
-        return s + "\n"
+        return s
 
     @staticmethod
     def test(line):
@@ -221,11 +221,11 @@ class SurfaceLine(object):
         while points_read < self.count and line.strip():
             if line.strip() and not self._starts_new_storage_area_component(line):
                 # Parse coordinates - typically formatted as continuous numbers without commas
-                # Each line contains multiple coordinate pairs
-                line = line.strip()
+                # Each line contains one coordinate pair for surface line
+                line = line.rstrip()  # Keep leading spaces, only remove trailing newline
                 if line:
-                    # Try to split the line into pairs of coordinates
-                    # Coordinates are typically fixed width - 16 chars each
+                    # Try to split the line into a pair of coordinates
+                    # For surface line, each line contains one coordinate pair
                     clean_line = line.replace(",", "")  # Remove any commas if present
                     # Parse fixed-width format - 16 chars per coordinate
                     coords = []
@@ -236,11 +236,10 @@ class SurfaceLine(object):
                             coords.append(coord_chunk)
                         pos += 16
 
-                    # Group into pairs (x, y)
-                    for i in range(0, len(coords) - 1, 2):
-                        if i + 1 < len(coords) and points_read < self.count:
-                            self.points.append((coords[i], coords[i + 1]))
-                            points_read += 1
+                    # Group into pairs (x, y) - for surface line, there should be exactly 2 coordinates
+                    if len(coords) >= 2 and points_read < self.count:
+                        self.points.append((coords[0], coords[1]))
+                        points_read += 1
             else:
                 break  # Found a new storage area component or end of section
 
@@ -253,7 +252,11 @@ class SurfaceLine(object):
         if DEBUG:
             print(f"Imported {len(self.points)} surface line points for storage area")
 
-        return line
+        # Return the next line after the surface line data
+        try:
+            return next(geo_file)
+        except StopIteration:
+            return line  # Return the last line if we're at the end of the file
 
     def _starts_new_storage_area_component(self, line):
         """Check if line starts a new storage area component"""
@@ -272,8 +275,11 @@ class SurfaceLine(object):
     def __str__(self):
         s = f"Storage Area Surface Line= {self.count}\n"
         # Format points - one pair per line for surface line, 16 char width
-        for point in self.points:
-            s += f"{point[0]:>16}{point[1]:>16}\n"
+        for i, point in enumerate(self.points):
+            s += f"{point[0]:>16}{point[1]:>16}"
+            if i < len(self.points) - 1:
+                s += "\n"
+        s += "\n"  # Add final newline
         return s
 
 
@@ -347,7 +353,7 @@ class Is2D(object):
     @staticmethod
     def test(line):
         stripped_line = line.strip()
-        if stripped_line[:17] == "Storage Area Is2D=":
+        if stripped_line.startswith("Storage Area Is2D="):
             return True
         return False
 
@@ -391,7 +397,7 @@ class Points2D(object):
     def test(line):
         stripped_line = line.strip()
         if (
-            stripped_line[:21] == "Storage Area 2D Points"
+            stripped_line.startswith("Storage Area 2D Points=")
             and "PerimeterTime" not in stripped_line
         ):
             return True
@@ -409,9 +415,9 @@ class Points2D(object):
         while points_read < self.count:
             if line.strip() and not self._starts_new_storage_area_component(line):
                 # Process line with coordinates - fixed width format
-                clean_line = line.strip().replace(
+                clean_line = line.rstrip().replace(
                     ",", ""
-                )  # Remove any commas if present
+                )  # Remove any commas if present, but keep leading spaces
                 # Parse fixed-width format - 16 chars per coordinate
                 coords = []
                 pos = 0
@@ -438,7 +444,11 @@ class Points2D(object):
         if DEBUG:
             print(f"Imported {len(self.points)} 2D points for storage area")
 
-        return line
+        # Return the next line after the 2D points data
+        try:
+            return next(geo_file)
+        except StopIteration:
+            return line  # Return the last line if we're at the end of the file
 
     def _starts_new_storage_area_component(self, line):
         """Check if line starts a new storage area component"""
@@ -455,9 +465,11 @@ class Points2D(object):
         # Format points - 2 pairs per line as seen in the example, 16 char width
         for i in range(0, len(self.points), 2):
             if i + 1 < len(self.points):
-                s += f"{self.points[i][0]:<16}{self.points[i][1]:<16}{self.points[i + 1][0]:<16}{self.points[i + 1][1]:<16}\n"
+                s += f"{self.points[i][0]:>16}{self.points[i][1]:>16}{self.points[i + 1][0]:>16}{self.points[i + 1][1]:>16}\n"
             else:
-                s += f"{self.points[i][0]:<16}{self.points[i][1]:<16}\n"
+                # This should only happen if there's an odd number of points, which shouldn't happen
+                # since points should always come in pairs
+                s += f"{self.points[i][0]:>16}{self.points[i][1]:>16}\n"
         return s
 
 
@@ -627,4 +639,3 @@ class FaceMinLengthRatio(object):
 
     def __str__(self):
         return f"2D Face Min Length Ratio={self.value}\n"
-
