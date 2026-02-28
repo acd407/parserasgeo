@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-Test script to parse 2d.g01 file using parserasgeo library
+Test script to parse g01 file using parserasgeo library
 """
 
 import sys
 import os
 
 # Add the parserasgeo module to the path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "parserasgeo"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), os.path.pardir))
 
 import parserasgeo as prg
 
