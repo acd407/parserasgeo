@@ -14,11 +14,14 @@ import parserasgeo as prg
 
 def main():
     print("=" * 60)
-    print("Testing parserasgeo library with 2d.g01 file")
+    print("Testing parserasgeo library")
     print("=" * 60)
 
     # Path to the 2d.g01 file
     geo_file = "leak.g01"
+
+    if len(sys.argv) > 1:
+        geo_file = sys.argv[1]
 
     # Check if the file exists
     if not os.path.isfile(geo_file):
@@ -53,11 +56,27 @@ def main():
             and hasattr(item.header, "name")
             and hasattr(item, "surface_line")
         )
+        lateral_weirs = sum(1 for item in geo.geo_list if type(item).__name__ == "LateralWeir")
 
         print(f"Number of river reaches: {river_reaches}")
         print(f"Number of bridges: {bridges}")
         print(f"Number of culverts: {culverts}")
         print(f"Number of storage areas: {storage_areas}")
+        print(f"Number of lateral weirs: {lateral_weirs}")
+
+        # Print details about lateral weirs
+        if lateral_weirs > 0:
+            print("\nLateral Weir Details:")
+            for i, item in enumerate(geo.geo_list):
+                # Check if this is a lateral weir by looking for the class name
+                if type(item).__name__ == "LateralWeir":
+                    print(f"  Lateral Weir {i + 1}:")
+                    print(f"    River: {item.river}, Reach: {item.reach}")
+                    if hasattr(item, "header") and hasattr(item.header, "station"):
+                        print(f"    Station: {item.header.station}")
+                    if hasattr(item, "node_name") and hasattr(item.node_name, "name"):
+                        print(f"    Node Name: {item.node_name.name}")
+                    print()
 
         # Print details about storage areas
         if storage_areas > 0:
@@ -82,13 +101,13 @@ def main():
                         if hasattr(item.surface_line, "count"):
                             print(f"    Surface Line Points: {item.surface_line.count}")
                         elif hasattr(item.surface_line, "__len__"):
-                            print(f"    Surface Line Points: {len(item.surface_line)}")
+                            print(f"    Surface Line Points: {item.surface_line.count}")
                     # Safely access points_2d count
                     if hasattr(item, "points_2d"):
                         if hasattr(item.points_2d, "count"):
                             print(f"    2D Points: {item.points_2d.count}")
                         elif hasattr(item.points_2d, "__len__"):
-                            print(f"    2D Points: {len(item.points_2d)}")
+                            print(f"    2D Points: {item.points_2d}")
                     print()
 
         # Print details about the first few cross sections
